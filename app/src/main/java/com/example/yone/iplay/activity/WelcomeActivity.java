@@ -19,7 +19,7 @@ public class WelcomeActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
         Handler handler = new Handler();
-        handler.postDelayed(new Loading(),2000);
+        handler.postDelayed(new Loading(),1000);
     }
 
     class Loading implements Runnable{

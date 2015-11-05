@@ -41,7 +41,7 @@ public class OnlineMusicService extends Service {
 
     private List<OnlineSongs> OnlineSongsList;
 
-    public static String  playUrl = "";
+    public String playCurrentUrl = "";
 
     private Binder musicBinder = new MusicBinder();
 
@@ -53,18 +53,19 @@ public class OnlineMusicService extends Service {
 
     private static final int updateProgress = 1; //更新进度条
 
-    private static final  int updateCurrentMusic = 2; //更新当前播放歌曲
+    private static final int updateCurrentMusic = 2; //更新当前播放歌曲
 
     private static final int updateDuration = 3; //更新当前播放时间
 
     public static final String ACTION_UPDATE_PROGRESS = "com.example.yone.iplay.OnlineMusicService.UPDATE_PROGRESS";
     public static final String ACTION_UPDATE_DURATION = "com.example.yone.iplay.OnlineMusicService.UPDATE_DURATION";
     public static final String ACTION_UPDATE_CURRENT_MUSIC = "com.example.yone.iplay.OnlineMusicService.UPDATE_CURRENT_MUSIC";
+    public static final String ACTION_UPDATE_CURRENT_PLAYURL = "com.example.yone.iplay.OnlineMusicService.UPDATE_PLAY_URL";
 
     private int currentMode = 3; //默认播放模式
 
     public static final String[] MODE_DESC = {  //模式类型
-            "单曲播放","循环播放","随机播放","顺序播放"};
+            "单曲播放", "循环播放", "随机播放", "顺序播放"};
 
     public static final int MODE_ONE_LOOP = 0;//单曲循环
     public static final int MODE_ALL_LOOP = 1;//全部循环
@@ -84,15 +85,15 @@ public class OnlineMusicService extends Service {
     };
 
 
-    private void connectToMusicService(){
-        Intent intent = new Intent(this,MusicService.class);
+    private void connectToMusicService() {
+        Intent intent = new Intent(this, MusicService.class);
         this.bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
     }
 
-    private Handler handler = new Handler(){
+    private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
+            switch (msg.what) {
                 case updateProgress:
                     toUpdateProgress();
                     break;
@@ -106,15 +107,16 @@ public class OnlineMusicService extends Service {
         }
     };
 
-    private void toUpdateCurrentMusic(){
+    private void toUpdateCurrentMusic() {
         Intent intent = new Intent();
         intent.setAction(ACTION_UPDATE_CURRENT_MUSIC);
-        intent.putExtra(ACTION_UPDATE_CURRENT_MUSIC,currentMusic);
+        intent.putExtra(ACTION_UPDATE_CURRENT_MUSIC, currentMusic);
+        intent.putExtra(ACTION_UPDATE_CURRENT_PLAYURL, playCurrentUrl);
         sendBroadcast(intent);
     }
 
-    private void toUpdateDuration(){
-        if (mediaPlayer != null){
+    private void toUpdateDuration() {
+        if (mediaPlayer != null) {
             int duration = mediaPlayer.getDuration();
             Intent intent = new Intent();
             intent.setAction(ACTION_UPDATE_DURATION);
@@ -123,8 +125,8 @@ public class OnlineMusicService extends Service {
         }
     }
 
-    private void toUpdateProgress(){
-        if (mediaPlayer != null){
+    private void toUpdateProgress() {
+        if (mediaPlayer != null) {
             int progress = mediaPlayer.getCurrentPosition();
             Intent intent = new Intent();
             intent.setAction(ACTION_UPDATE_PROGRESS);
@@ -143,16 +145,16 @@ public class OnlineMusicService extends Service {
 
     @Override
     public void onDestroy() {
-        if (mediaPlayer != null){
+        if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
         }
     }
 
     /**
-     *  初始化MediaPlayer
+     * 初始化MediaPlayer
      */
-    private void initMediaPlayer(){
+    private void initMediaPlayer() {
         mediaPlayer = new MediaPlayer();
         connectToMusicService();
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -181,8 +183,8 @@ public class OnlineMusicService extends Service {
                             break;
                         case MODE_SEQUENCE:
                             if (currentMusic < OnlineSongsList.size() - 1) {
-                                playNext();
                                 currentMusic++;
+                                playNext();
                             }
                             break;
                         default:
@@ -194,22 +196,23 @@ public class OnlineMusicService extends Service {
     }
 
     //记录下当前播放歌曲位置
-    private void setCurrentMusic(int pCurrentMusic){
+    private void setCurrentMusic(int pCurrentMusic) {
         currentMusic = pCurrentMusic;
         handler.sendEmptyMessage(updateCurrentMusic);
     }
 
     //在歌曲列表长度中随机生成一个位置
-    private int getRandomPosition(){
-        int random = (int)(Math.random() * (OnlineSongsList.size() - 1));
+    private int getRandomPosition() {
+        int random = (int) (Math.random() * (OnlineSongsList.size() - 1));
         return random;
     }
 
-    private void playUrl(String playUrl,int pcurrentPosition,int currentMusic){
+    private void playUrl(String playUrl, int pcurrentPosition, int currentMusic) {
         currentPosition = pcurrentPosition;
+        playCurrentUrl = playUrl;
         setCurrentMusic(currentMusic);
-        if (localmusicBinder != null){
-            if (localmusicBinder.isPlaying()){
+        if (localmusicBinder != null) {
+            if (localmusicBinder.isPlaying()) {
                 localmusicBinder.stopPlay();
             }
         }
@@ -225,17 +228,17 @@ public class OnlineMusicService extends Service {
         isPlaying = true;
     }
 
-    private void playUrl(int currentMusic,int pcurrentPosition){
+    private void playUrl(int currentMusic, int pcurrentPosition) {
         currentPosition = pcurrentPosition;
         setCurrentMusic(currentMusic);
-        if (localmusicBinder != null){
-            if (localmusicBinder.isPlaying()){
+        if (localmusicBinder != null) {
+            if (localmusicBinder.isPlaying()) {
                 localmusicBinder.stopPlay();
             }
         }
         mediaPlayer.reset();
         try {
-            mediaPlayer.setDataSource(playUrl);
+            mediaPlayer.setDataSource(playCurrentUrl);
             mediaPlayer.prepare();
         } catch (IOException e) {
             e.printStackTrace();
@@ -244,111 +247,112 @@ public class OnlineMusicService extends Service {
         isPlaying = true;
     }
 
-    private void stop(){
+    private void stop() {
         mediaPlayer.stop();
         isPlaying = false;
     }
 
-    private void playNext(){
-        switch (currentMode){
+    private void playNext() {
+        switch (currentMode) {
             case MODE_ONE_LOOP:
-          //      play(currentMusic,0);
+                //      play(currentMusic,0);
                 break;
             case MODE_ALL_LOOP:
-                if (currentMusic + 1 == OnlineSongsList.size()){ //最后一首
-            //        play(0,0);
-                }else {
-           //         play(currentMusic + 1,0);
+                if (currentMusic == OnlineSongsList.size()) { //最后一首
+                    //        play(0,0);
+                } else {
+                    //         play(currentMusic + 1,0);
                 }
                 break;
             case MODE_SEQUENCE:
-                if (currentMusic + 1 == OnlineSongsList.size()){
+                if (currentMusic == OnlineSongsList.size()) {
                     Toast.makeText(this, "这是最后一首了", Toast.LENGTH_SHORT).show();
-                }else {
-                    getSongPlayUrlBysId(OnlineSongsList.get(currentMusic + 1).getsId());
-                 //   playUrl(playUrl,currentMusic);
+                } else {
+                    getSongPlayUrlBysId(OnlineSongsList.get(currentMusic).getsId());
+                    //   playUrl(playUrl,currentMusic);
                 }
                 break;
             case MODE_RANDOM:
-             //   play(getRandomPosition(),0);
+                //   play(getRandomPosition(),0);
                 break;
         }
     }
 
-    private void playPrevious(){
-        switch (currentMode){
+    private void playPrevious() {
+        switch (currentMode) {
             case MODE_ONE_LOOP:
-           //     play(currentMusic,0);
+                //     play(currentMusic,0);
                 break;
             case MODE_ALL_LOOP:
-                if (currentMusic - 1 < 0){
-           //         play(OnlineSongsList.size() - 1,0);
-                }else {
-           //         play(currentMusic - 1, 0);
+                if (currentMusic - 1 < 0) {
+                    //         play(OnlineSongsList.size() - 1,0);
+                } else {
+                    //         play(currentMusic - 1, 0);
                 }
                 break;
             case MODE_SEQUENCE:
-                if (currentMusic - 1 < 0){
-                    Toast.makeText(this,"这是第一首歌",Toast.LENGTH_SHORT).show();
-                }else {
+                if (currentMusic - 1 < 0) {
+                    Toast.makeText(this, "这是第一首歌", Toast.LENGTH_SHORT).show();
+                } else {
                     getSongPlayUrlBysId(OnlineSongsList.get(currentMusic - 1).getsId());
-                    playUrl(playUrl,0,0);
+                    playUrl(playCurrentUrl, 0, 0);
                 }
                 break;
             case MODE_RANDOM:
-            //    play(getRandomPosition(),0);
+                //    play(getRandomPosition(),0);
                 break;
         }
     }
+
     @Override
     public IBinder onBind(Intent intent) {
         return musicBinder;
     }
 
-    public class MusicBinder extends Binder{
+    public class MusicBinder extends Binder {
 
-        public void startPlay(int currentMusic,int currentPosition){
-            playUrl(currentMusic,currentPosition);
+        public void startPlay(int currentMusic, int currentPosition) {
+            playUrl(currentMusic, currentPosition);
         }
 
-        public void startPlay(String playUrl, int currentPosition,int currentMusic){
-            playUrl(playUrl,currentPosition,currentMusic);
+        public void startPlay(String playUrl, int currentPosition, int currentMusic) {
+            playUrl(playUrl, currentPosition, currentMusic);
         }
 
-        public void stopPlay(){
+        public void stopPlay() {
             stop();
         }
 
-        public void toPlayNext(){
+        public void toPlayNext() {
             playNext();
         }
 
-        public void toPlayPrevious(){
+        public void toPlayPrevious() {
             playPrevious();
         }
 
-        public void changeMode(){
+        public void changeMode() {
             currentMode = (currentMode + 1) % 4;
-            Toast.makeText(OnlineMusicService.this,MODE_DESC[currentMode],Toast.LENGTH_SHORT).show();
+            Toast.makeText(OnlineMusicService.this, MODE_DESC[currentMode], Toast.LENGTH_SHORT).show();
         }
 
-        public void changeMode(int pCurrentMode){
+        public void changeMode(int pCurrentMode) {
             currentMode = pCurrentMode;
             //   Toast.makeText(MusicService.this,MODE_DESC[currentMode],Toast.LENGTH_SHORT).show();
         }
 
-        public int getCurrentMode(){
-            return  currentMode;
+        public int getCurrentMode() {
+            return currentMode;
         }
 
-        public boolean isPlaying(){
+        public boolean isPlaying() {
             return isPlaying;
         }
 
         /**
          * 更新当前歌曲和时间
          */
-        public void notifyActivity(){
+        public void notifyActivity() {
             toUpdateCurrentMusic();
             toUpdateDuration();
         }
@@ -356,21 +360,21 @@ public class OnlineMusicService extends Service {
         /**
          * 更新进度条
          */
-        public void changProgress(int progress){
-            if (mediaPlayer != null){
+        public void changProgress(int progress) {
+            if (mediaPlayer != null) {
                 currentPosition = progress * 1000;
-                if (isPlaying){
+                if (isPlaying) {
                     mediaPlayer.seekTo(currentPosition);
-                }else {
-                      getSongPlayUrlBysId(OnlineSongsList.get(currentMusic).getsId());
+                } else {
+                    getSongPlayUrlBysId(OnlineSongsList.get(currentMusic).getsId());
                     //  playUrl(playUrl,currentMusic);
-                    playUrl(playUrl,currentPosition,currentMusic);
+                    playUrl(playCurrentUrl, currentPosition, currentMusic);
                 }
             }
         }
     }
 
-    public void getData(final int songCount){
+    public void getData(final int songCount) {
         final GsonRequest<List<OnlineSongs>> request = TingAPI.getSongsRequest(songCount);
         final Response.Listener<List<OnlineSongs>> response = new Response.Listener<List<OnlineSongs>>() {
             @Override
@@ -382,13 +386,13 @@ public class OnlineMusicService extends Service {
         RequestManager.addRequest(request, null);
     }
 
-    public void getSongPlayUrlBysId(long s_Id){
+    public void getSongPlayUrlBysId(long s_Id) {
         final GsonRequest<SongsUrl> request = TingAPI.getOnLineSongsRequest(s_Id);
         final Response.Listener<SongsUrl> response = new Response.Listener<SongsUrl>() {
             @Override
             public void onResponse(SongsUrl songsUrl) {
-                playUrl = songsUrl.getSongurl();
-                playUrl(playUrl,0,currentMusic);
+                playCurrentUrl = songsUrl.getSongurl();
+                playUrl(playCurrentUrl, 0, currentMusic++);
             }
         };
         request.setSuccessListener(response);
