@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
                     shareIntent.setType("text/plain");
                     startActivity(shareIntent);
                 }
-
                 return true;
         }
         return super.onOptionsItemSelected(item);

@@ -293,9 +293,6 @@ public class OnlineMusicFragment extends Fragment {
             play.setImageResource(R.mipmap.ic_play_black_round_big);
             playbtn.setImageResource(R.mipmap.ic_play_black_round_big);
         } else {
-//            if (currentMusic == 0){
-//                getSongPlayUrlBysId(onlineSongsList.get(0).getsId(),0);
-//            }
             musicBinder.startPlay(playUrl, currentPosition, currentMusic);
             play.setImageResource(R.mipmap.ic_pause_black_large);
             playbtn.setImageResource(R.mipmap.ic_pause_black_large);
